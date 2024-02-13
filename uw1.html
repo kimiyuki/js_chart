@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Depth Time Visualization</title>
+    <!-- Chart.jsの読み込み -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PapaParseの読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+</head>
+<body>
+    <h2>Depth Time Visualization</h2>
+    <input type="file" id="csvFileInput" accept=".csv" />
+    <div>
+        <canvas id="depthChart"></canvas>
+    </div>
+
+    <script>
+        document.getElementById('csvFileInput').addEventListener('change', handleFileSelect, false);
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                complete: function(results) {
+                    // データから時間と水深の配列を抽出
+                    //const timeLabels = results.data.map(entry => entry.time.substring(11)); // 時間の部分のみ抽出
+                    //const depthData = results.data.map(entry => entry['depth(m)']);
+                    const filteredData = results.data.filter(entry => entry.time && entry['depth(m)'] !== undefined);
+                    const timeLabels = filteredData.map(entry => {
+                        // 'time'カラムの値が存在する場合のみsubstringを呼び出す
+                        const timeValue = entry.time;
+                        return timeValue ? timeValue.substring(11) : '';
+                    });
+                    const depthData = filteredData.map(entry => entry['depth(m)']);
+
+                    // Chart.jsで可視化
+                    const ctx = document.getElementById('depthChart').getContext('2d');
+                    if(window.depthChart instanceof Chart) {
+                        // 既存のチャートを破棄する
+                        window.depthChart.destroy();
+                    }
+                    window.depthChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: timeLabels, // 時間をX軸に
+                            datasets: [{
+                                label: 'Depth over Time',
+                                data: depthData, // 水深をY軸に
+                                fill: false,
+                                borderColor: 'blue',
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    title: {
+                                        display: true,
+                                        text: 'Depth (m)'
+                                    }
+                                },
+                                x: {
+                                    beginAtZero: false,
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>data show</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            console.log('hadler form submit')
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            console.log(file)
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const csv = e.target.result;
+                const data = parseCSV(csv);
+                processData(data);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(csv) {
+            // Implement CSV parsing logic here
+            // Return the parsed data as an array of objects
+            console.log(csv)
+            const lines = csv.split('\n');
+            const headers = lines[0].split(',');
+            console.log(`headers: ${headers.length}`)
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const obj = {};
+                const currentline = lines[i].split(',');
+                if (currentline.length < headers.length) {
+                    console.log(`currentline: ${currentline.length}`)
+                    continue;
+                }
+                for (let j = 0; j < headers.length; j++) {
+                    obj[headers[j]] = currentline[j];
+                }
+                data.push(obj);
+            }
+            return data;
+        }
+
+        function processData(data) {
+            // Use the data here
+            console.log(data);
+            const timeLabels = data.map(entry => entry.time.substring(11));
+            const pressabsData = data.map(entry => entry['Pressabs(hPa)']);
+            const depthData = data.map(entry => { return entry['depth(m)'] });
+            const ctx1 = document.getElementById('myChart1').getContext('2d');
+            ctx1.canvas.width = 800;
+            ctx1.canvas.height = 150;
+            // make time series chart 
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: timeLabels,
+                    datasets: [{
+                        label: 'Pressabs',
+                        data: pressabsData,
+                        borderColor: 'blue',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Pressabs'
+                            }
+                        }
+                    }
+                }
+            });
+            const ctx2 = document.getElementById('myChart2').getContext('2d');
+            ctx2.canvas.width = 800;
+            ctx2.canvas.height = 150;
+            new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: timeLabels,
+                    datasets: [{
+                        label: 'Depth',
+                        data: depthData,
+                        borderColor: 'blue',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        },
+                        //y軸はマイナス表示
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Depth'
+                            },
+                            beginAtZero: false,
+                            suggestedMin: Math.min(...depthData),
+                            suggestedMax: 0
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <div>
+        <form id="csvForm" onsubmit="handleFormSubmit(event)">
+            <label for="csvFile">Select a CSV file to upload:</label>
+            <input type="file" name="fileUpload" id="csvFile">
+            <input type="submit" value="Upload">
+        </form>
+        <canvas id="myChart1" width="400" height="400"></canvas>
+        <canvas id="myChart2" width="400" height="400"></canvas>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>3D Movement with Camera Control</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div>
+        <input type="file" id="csvFileInput" accept=".csv" style="margin-bottom: 30px;">
+    </div>
+    <div class="slider-container">
+        <div>
+            <label for="cameraX">Camera X:</label>
+            <input type="range" id="cameraX" min="-100" max="100" value="0">
+        </div>
+        <div>
+            <label for="cameraY">Camera Y:</label>
+            <input type="range" id="cameraY" min="-100" max="100" value="0">
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+        const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        const sphere = new THREE.Mesh(geometry, material);
+        scene.add(sphere);
+
+        camera.position.z = 50;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        document.getElementById('cameraX').addEventListener('input', function (event) {
+            camera.position.x = Number(event.target.value);
+        });
+
+        document.getElementById('cameraY').addEventListener('input', function (event) {
+            camera.position.y = Number(event.target.value);
+        });
+        const ratio = 100
+        document.getElementById('csvFileInput').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                complete: function (results) {
+                    let index = 0;
+                    const intervalId = setInterval(() => {
+                        if (index < results.data.length) {
+                            const entry = results.data[index++];
+                            sphere.position.x = entry.xacc / ratio;
+                            sphere.position.y = entry.yacc / ratio;
+                            sphere.position.z = entry.zacc / ratio - 100;
+                            console.log(sphere.position);
+                        } else {
+                            clearInterval(intervalId);
+                        }
+                    }, 100);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
